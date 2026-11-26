@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>핸드오버 체크 | 장비 셋업 체크리스트·인수인계</title>
+<style>
+  :root {
+    /* B. 라이트 고대비 테마 (옐로우룸 대응: 파랑·노랑·호박색 없음, 색 대신 밝기 차이·테두리·글자로 구분) */
+    --bg: #f4f1e8; --card: #fbf9f2; /* 미색: 눈부심 줄이기 */ --line: #777; --text: #2a2723; --muted: #3d3d3d;
+    --primary: #3a3631; /* 차콜: 검정 쨍함 줄이기 */ --primary-weak: #eee; --ok: #0b6b2e; --ok-weak: #fff;
+    --warn: #2a2723; --warn-weak: #fff; --bad: #b00000; --bad-weak: #fff; --na: #555;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5; font-size: 15px; word-break: keep-all; }
+  header.top { background: var(--primary); color: var(--card); padding: 14px 16px; position: sticky; top: 0; z-index: 10; }
+  header.top .row { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header.top h1 { font-size: 18px; margin: 0; flex: 1 1 auto; }
+  header.top small { display: block; font-weight: 400; opacity: .85; font-size: 12px; }
+  .top-progress { min-width: 140px; font-size: 13px; }
+  .bar { height: 8px; background: rgba(255,255,255,.3); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .bar > i { display: block; height: 100%; background: var(--card); width: 0; transition: width .3s; }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; }
+  .notice { background: var(--warn-weak); border: 1px solid #f0d9a8; color: #6b4a10; border-radius: var(--radius); padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+  nav.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  nav.tabs button { flex: 1; padding: 12px 8px; border: 1px solid var(--line); background: var(--card); border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  nav.tabs button[aria-selected="true"] { background: var(--primary); color: var(--card); border-color: var(--primary); }
+  section.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  details.info-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; }
+  details.info-card > summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+  details.info-card > summary::-webkit-details-marker { display: none; }
+  details.info-card .info-title { font-size: 16px; font-weight: 700; }
+  details.info-card .info-title { white-space: nowrap; }
+  details.info-card .info-line { flex: 1 1 0; min-width: 0; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  details.info-card .info-toggle { margin-left: auto; }
+  details.info-card .info-toggle::after { content: "펼치기 ▾"; font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; }
+  details.info-card[open] .info-toggle::after { content: "접기 ▴"; }
+  details.info-card[open] .info-line { display: none; }
+  details.info-card .info-body { padding: 0 16px 16px; }
+  section.card > h2 { font-size: 16px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  input, select, textarea { font: inherit; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; background: var(--card); width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: var(--primary); }
+  textarea { resize: vertical; min-height: 40px; }
+  .btn { font: inherit; font-weight: 600; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 9px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .btn.primary { background: var(--primary); color: var(--card); border-color: var(--primary); }
+  .btn.danger { color: var(--bad); border-color: #f1c2c2; }
+  .btn.sm { padding: 5px 10px; font-size: 13px; }
+  .btn.big { width: 100%; padding: 14px; font-size: 16px; }
+  .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .case-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+  .case-bar label.f { flex: 1 1 220px; }
+  .pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: #eef1f5; color: var(--muted); font-weight: 600; }
+  .pill.ok { background: var(--ok-weak); color: var(--ok); }
+  .pill.bad { background: var(--bad-weak); color: var(--bad); }
+  .pill.warn { background: var(--warn-weak); color: var(--warn); }
+  .pill.sev-high { background: var(--bad); color: var(--card); }
+  .pill.sev-mid { background: var(--warn); color: var(--card); }
+  .pill.sev-low { background: #8a94a6; color: var(--card); }
+  /* progress */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 22px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .stat.bad b { color: var(--bad); }
+  .stage-prog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stage-prog div { font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between; gap: 6px; }
+  .stage-prog div.done { background: var(--ok-weak); border-color: #b9e2c8; }
+  .stage-prog div.has-bad { border-color: var(--bad); }
+  /* stages */
+  details.stage { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); margin-bottom: 10px; overflow: hidden; }
+  details.stage > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  details.stage > summary::-webkit-details-marker { display: none; }
+  details.stage > summary::before { content: "▸"; color: var(--muted); transition: transform .2s; }
+  details.stage[open] > summary::before { transform: rotate(90deg); }
+  details.stage > summary .sp { flex: 1; }
+  .item { border-top: 1px solid var(--line); padding: 14px 16px; }
+  .item.out { background: var(--bad-weak); }
+  .item-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .item-title { font-weight: 600; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+  .seg button { font: inherit; font-size: 14px; border: 0; background: var(--card); padding: 8px 12px; cursor: pointer; color: var(--muted); border-right: 1px solid var(--line); }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"][data-v="done"] { background: var(--ok); color: var(--card); }
+  .seg button[aria-pressed="true"][data-v="hold"] { background: var(--warn); color: var(--card); }
+  .seg button[aria-pressed="true"][data-v="na"] { background: var(--na); color: var(--card); }
+  .meas { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .meas input { width: 140px; }
+  .meas .unit { font-weight: 600; }
+  .meas .spec { font-size: 13px; color: var(--muted); }
+  .meas .verdict { font-size: 13px; font-weight: 700; }
+  .item.out .meas input { border-color: var(--bad); color: var(--bad); font-weight: 700; }
+  .verdict.bad { color: var(--bad); } .verdict.ok { color: var(--ok); }
+  .item textarea { margin-top: 10px; }
+  .issues { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .issue { display: flex; gap: 8px; align-items: center; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; flex-wrap: wrap; }
+  .issue.closed { opacity: .55; text-decoration: line-through; }
+  .issue .txt { flex: 1 1 0; min-width: 0; }
+  .issue-form { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .issue-form input { flex: 1 1 180px; }
+  .issue-form select { width: auto; }
+  /* summary */
+  .summary-sheet { background: var(--card); border: 2px solid var(--text); border-radius: 10px; padding: 18px; }
+  .summary-sheet h3 { margin: 0 0 4px; font-size: 18px; }
+  .summary-sheet h4 { margin: 16px 0 6px; font-size: 15px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .summary-sheet ul, .summary-sheet ol { margin: 0; padding-left: 20px; }
+  .summary-sheet li { margin: 3px 0; }
+  .summary-sheet .meta { font-size: 13px; color: var(--muted); }
+  .summary-sheet .redtxt { color: var(--bad); font-weight: 700; }
+  .empty { color: var(--muted); font-size: 14px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--primary); color: var(--card); padding: 10px 16px; border-radius: 99px; font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 50; }
+  .toast.show { opacity: 1; }
+  footer { text-align: center; font-size: 12px; color: var(--muted); padding: 10px 16px 30px; }
+  .hidden { display: none !important; }
+
+  /* ---- B. 라이트 고대비: 색·테두리만 덮어쓰기 (기능 변경 없음) ---- */
+  .notice { background: var(--card); border: 2px solid var(--text); color: var(--text); }
+  input, select, textarea { border-color: #777; }
+  input:focus, select:focus, textarea:focus { outline: 3px solid var(--text); }
+  .btn { border-color: #777; }
+  .btn.danger { border-color: var(--bad); }
+  .pill { background: var(--card); color: var(--text); border: 1px solid #555; }
+  .pill.ok { background: var(--ok); color: var(--card); border-color: var(--ok); }
+  .pill.bad { background: var(--bad); color: var(--card); border-color: var(--bad); }
+  .pill.warn { background: var(--card); color: var(--text); border: 1px dashed var(--text); }
+  .pill.sev-high { background: var(--bad); color: var(--card); border-color: var(--bad); }
+  .pill.sev-mid { background: var(--primary); color: var(--card); border-color: var(--primary); }
+  .pill.sev-low { background: var(--card); color: var(--text); border-color: #555; }
+  .stat { background: var(--card); border: 1px solid #777; }
+  .stat.bad { border: 2px solid var(--bad); }
+  .stage-prog div { border-color: #777; }
+  .stage-prog div.done { background: var(--card); border: 2px solid var(--ok); color: var(--ok); font-weight: 700; }
+  .stage-prog div.has-bad { border: 3px solid var(--bad); }
+  details.stage, details.info-card, section.card { border-color: #777; }
+  .item.out { background: var(--card); box-shadow: inset 0 0 0 3px var(--bad); }
+  .item.out .meas input { border-width: 3px; }
+  .verdict.bad::before { content: "▲ "; }
+  .seg { border-color: #777; }
+  .seg button { color: #444; border-right-color: #777; }
+  .seg button[aria-pressed="true"][data-v="done"] { background: var(--ok); color: var(--card); font-weight: 700; }
+  .seg button[aria-pressed="true"][data-v="hold"] { background: var(--card); color: var(--text); font-weight: 700; outline: 2px dashed var(--text); outline-offset: -4px; }
+  .seg button[aria-pressed="true"][data-v="na"] { background: #555; color: var(--card); font-weight: 700; }
+  .issue { background: var(--card); border-color: #777; }
+  .toast { background: var(--primary); }
+
+  @media (max-width: 700px) {
+    body { font-size: 15px; }
+    main { padding: 12px; }
+    .grid { grid-template-columns: 1fr 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stage-prog { grid-template-columns: 1fr 1fr; }
+    .seg { display: flex; width: 100%; }
+    .seg button { flex: 1; padding: 10px 4px; }
+    .meas input { width: 120px; }
+  }
+  @media (max-width: 420px) {
+    .grid { grid-template-columns: 1fr; }
+    .stage-prog { grid-template-columns: 1fr; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.top, nav.tabs, .notice, #view-check, .no-print, footer, .toast { display: none !important; }
+    #view-summary { display: block !important; }
+    main { padding: 0; max-width: none; }
+    section.card { border: 0; padding: 0; }
+    .summary-sheet { border: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row">
+    <h1><span id="appName">핸드오버 체크</span><small>오버레이 계측장비 셋업 체크리스트 · 인수인계 요약</small></h1>
+    <div class="top-progress" aria-live="polite">
+      전체 진행률 <b id="topPct">0%</b>
+      <div class="bar"><i id="topBar"></i></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="notice">
+    <b>시제품 안내</b> · 체크리스트 단계·항목·기준값은 실습용 <b>샘플 데이터</b>이며 ㈜오로스테크놀로지의 실제 셋업 절차·사양이 아닙니다.
+    입력 내용은 이 기기의 브라우저(localStorage)에만 저장되고 서버로 전송되지 않습니다.
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-check" aria-selected="true" data-view="check">① 셋업 체크리스트</button>
+    <button role="tab" id="tab-summary" aria-selected="false" data-view="summary">② 인수인계 요약</button>
+  </nav>
+
+  <!-- ===== 기능 1: 단계별 셋업 체크리스트 ===== -->
+  <div id="view-check">
+    <details class="card info-card" id="infoCard">
+      <summary>
+        <span class="info-title">셋업 건 정보</span>
+        <span class="info-line" id="infoLine"></span>
+        <span class="info-toggle" aria-hidden="true"></span>
+      </summary>
+      <div class="info-body">
+      <div class="case-bar">
+        <label class="f">셋업 건 선택
+          <select id="caseSelect"></select>
+        </label>
+        <div class="row-actions">
+          <button class="btn" id="newCase">+ 새 셋업 건</button>
+          <button class="btn danger" id="delCase">삭제</button>
+        </div>
+      </div>
+      <div class="grid">
+        <label class="f">고객사 (샘플명)<input data-info="customer" placeholder="예: 샘플팹A"></label>
+        <label class="f">사이트<input data-info="site" placeholder="예: 샘플라인1"></label>
+        <label class="f">장비 모델<select data-info="model" id="modelSelect"></select></label>
+        <label class="f">장비 S/N<input data-info="sn" placeholder="예: SAMPLE-001"></label>
+        <label class="f">담당자 (현재 교대)<input data-info="owner" placeholder="예: FSE-1"></label>
+        <label class="f">다음 담당자<input data-info="nextOwner" placeholder="예: FSE-2"></label>
+        <label class="f">교대 시작 시각<input type="datetime-local" data-info="shiftStart"></label>
+      </div>
+      </div>
+    </details>
+
+    <section class="card">
+      <h2>진행 현황</h2>
+      <div class="stats">
+        <div class="stat"><b id="stPct">0%</b><span>전체 진행률</span></div>
+        <div class="stat"><b id="stDone">0/0</b><span>완료·해당 없음</span></div>
+        <div class="stat"><b id="stHold">0</b><span>보류</span></div>
+        <div class="stat bad"><b id="stOut">0</b><span>기준 이탈 측정값</span></div>
+      </div>
+      <div class="stage-prog" id="stageProg"></div>
+    </section>
+
+    <div id="stages"></div>
+
+    <button class="btn primary big no-print" id="makeSummary">인수인계 요약 만들기</button>
+  </div>
+
+  <!-- ===== 기능 2: 인수인계 요약 자동 생성 ===== -->
+  <div id="view-summary" class="hidden">
+    <section class="card">
+      <h2>인수인계 요약 <span class="pill">체크리스트 기록으로 자동 생성</span></h2>
+      <div class="row-actions no-print" style="margin-bottom:12px">
+        <button class="btn primary" id="copySummary">요약 복사</button>
+        <button class="btn" id="printSummary">인쇄</button>
+        <button class="btn" id="refreshSummary">다시 생성</button>
+      </div>
+      <div class="summary-sheet" id="summarySheet"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  2026 NI2.0 AID 해커톤 · 11팀 드리미 · 시제품 v0.1 (로그인·결제·서버 없음)
+  <div class="no-print" style="margin-top:6px"><button class="btn sm" id="resetAll">샘플 데이터로 초기화</button></div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- 샘플 데이터 (실습용, 실제 기업 데이터 아님) ----------
+  const TEMPLATES = {
+    'OL-SAMPLE': {
+      label: 'OL-SAMPLE (샘플 오버레이 계측장비)',
+      stages: [
+        { id: 's1', name: '1. 반입·위치', items: [
+          { id: 's1i1', name: '반입 경로·설치 위치 확인', type: 'check' },
+          { id: 's1i2', name: '수평(레벨링) 확인', type: 'check' } ] },
+        { id: 's2', name: '2. 유틸리티', items: [
+          { id: 's2i1', name: '전원 연결·접지 확인', type: 'check' },
+          { id: 's2i2', name: 'CDA(압축공기) 압력', type: 'measure', unit: 'MPa', min: 0.50, max: 0.70, specText: '0.50 ~ 0.70' },
+          { id: 's2i3', name: '진공 압력', type: 'measure', unit: 'kPa', max: -80, specText: '-80 이하' } ] },
+        { id: 's3', name: '3. 기동', items: [
+          { id: 's3i1', name: '전원 인가·장비 SW 부팅', type: 'check' },
+          { id: 's3i2', name: '웨이퍼 반송 로봇 티칭', type: 'check' } ] },
+        { id: 's4', name: '4. 캘리브레이션', items: [
+          { id: 's4i1', name: '스테이지 원점·광학계 초점 캘리브레이션', type: 'check' } ] },
+        { id: 's5', name: '5. 성능 확인', items: [
+          { id: 's5i1', name: '측정 반복성 (3σ)', type: 'measure', unit: 'nm', max: 0.30, specText: '0.30 이하' } ] },
+        { id: 's6', name: '6. Qualification', items: [
+          { id: 's6i1', name: '고객 승인 테스트 결과', type: 'check' } ] }
+      ]
+    }
+  };
+
+  const STATUS_LABEL = { done: '완료', hold: '보류', na: '해당 없음', '': '미진행' };
+  const SEV_LABEL = { high: '높음', mid: '중간', low: '낮음' };
+  const SEV_ORDER = { high: 0, mid: 1, low: 2 };
+  const STORE_KEY = 'ni2-team11-setup-checklist-v1';
+
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const nowLocal = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtTime = v => { if (!v) return '-'; const d = new Date(v); if (isNaN(d)) return v;
+    return d.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }); };
+
+  function sampleCase() {
+    return {
+      id: uid(),
+      info: { customer: '샘플팹A', site: '샘플라인1', model: 'OL-SAMPLE', sn: 'SAMPLE-001', owner: 'FSE-1', nextOwner: 'FSE-2', shiftStart: nowLocal() },
+      records: {}
+    };
+  }
+  function blankCase() {
+    return { id: uid(), info: { customer: '', site: '', model: 'OL-SAMPLE', sn: '', owner: '', nextOwner: '', shiftStart: nowLocal() }, records: {} };
+  }
+
+  // ---------- 저장/불러오기 ----------
+  let state;
+  function load() {
+    try { state = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (e) { state = null; }
+    if (!state || !Array.isArray(state.cases) || !state.cases.length) {
+      const c = sampleCase();
+      state = { cases: [c], currentId: c.id };
+    }
+    if (!state.cases.find(c => c.id === state.currentId)) state.currentId = state.cases[0].id;
+  }
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} }
+  const cur = () => state.cases.find(c => c.id === state.currentId);
+  const tpl = c => TEMPLATES[c.info.model] || TEMPLATES['OL-SAMPLE'];
+  const rec = (c, itemId) => (c.records[itemId] ||= { status: '', value: '', memo: '', issues: [] });
+
+  // ---------- 판정 ----------
+  function judge(item, value) {
+    if (item.type !== 'measure' || value === '' || value == null) return null;
+    const v = Number(value);
+    if (!isFinite(v)) return 'invalid';
+    if (item.min != null && v < item.min) return 'out';
+    if (item.max != null && v > item.max) return 'out';
+    return 'ok';
+  }
+
+  function compute(c) {
+    const t = tpl(c);
+    let total = 0, done = 0, hold = 0, out = 0;
+    const stages = t.stages.map(st => {
+      let sDone = 0, sOut = 0;
+      st.items.forEach(it => {
+        total++;
+        const r = rec(c, it.id);
+        if (r.status === 'done' || r.status === 'na') { done++; sDone++; }
+        if (r.status === 'hold') hold++;
+        if (judge(it, r.value) === 'out') { out++; sOut++; }
+      });
+      return { id: st.id, name: st.name, total: st.items.length, done: sDone, out: sOut };
+    });
+    return { total, done, hold, out, pct: total ? Math.round(done / total * 100) : 0, stages };
+  }
+
+  // ---------- 렌더링: 기능 1 ----------
+  const $ = s => document.querySelector(s);
+
+  function renderCaseSelect() {
+    const sel = $('#caseSelect');
+    sel.innerHTML = state.cases.map(c => {
+      const i = c.info;
+      const name = [i.customer || '(고객사 미입력)', i.site, i.sn].filter(Boolean).join(' · ');
+      return `<option value="${c.id}" ${c.id === state.currentId ? 'selected' : ''}>${esc(name)}</option>`;
+    }).join('');
+    $('#modelSelect').innerHTML = Object.entries(TEMPLATES).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join('');
+  }
+
+  function renderInfoLine() {
+    const i = cur().info;
+    const parts = [i.customer, i.sn, (i.owner || i.nextOwner) ? `${i.owner || '?'} → ${i.nextOwner || '?'}` : ''].filter(Boolean);
+    $('#infoLine').textContent = parts.length ? parts.join(' · ') : '입력된 정보 없음 (눌러서 입력)';
+  }
+  function renderInfo() {
+    const c = cur();
+    document.querySelectorAll('[data-info]').forEach(el => { el.value = c.info[el.dataset.info] ?? ''; });
+    // 고객사가 입력된 셋업 건은 접어서 한 줄 요약만, 빈 셋업 건은 펼쳐서 바로 입력
+    $('#infoCard').open = !c.info.customer;
+    renderInfoLine();
+  }
+
+  function renderProgress() {
+    const c = cur(); const p = compute(c);
+    $('#topPct').textContent = p.pct + '%';
+    $('#topBar').style.width = p.pct + '%';
+    $('#stPct').textContent = p.pct + '%';
+    $('#stDone').textContent = `${p.done}/${p.total}`;
+    $('#stHold').textContent = p.hold;
+    $('#stOut').textContent = p.out;
+    $('#stageProg').innerHTML = p.stages.map(s =>
+      `<div class="${s.done === s.total ? 'done' : ''} ${s.out ? 'has-bad' : ''}"><span>${esc(s.name)}</span><b>${s.done}/${s.total}${s.out ? ` <span class="pill bad">이탈 ${s.out}</span>` : ''}</b></div>`
+    ).join('');
+    // 단계 헤더 배지 갱신
+    p.stages.forEach(s => {
+      const b = document.querySelector(`[data-stage-badge="${s.id}"]`);
+      if (b) {
+        b.className = 'pill ' + (s.out ? 'bad' : s.done === s.total ? 'ok' : '');
+        b.textContent = `${s.done}/${s.total}${s.out ? ' · 이탈 ' + s.out : ''}`;
+      }
+    });
+  }
+
+  function itemHTML(c, it) {
+    const r = rec(c, it.id);
+    const j = judge(it, r.value);
+    const seg = ['done', 'hold', 'na'].map(v =>
+      `<button type="button" data-act="status" data-v="${v}" aria-pressed="${r.status === v}">${STATUS_LABEL[v]}</button>`).join('');
+    const meas = it.type === 'measure' ? `
+      <div class="meas">
+        <input type="number" step="any" inputmode="decimal" data-act="value" value="${esc(r.value)}" placeholder="측정값" aria-label="${esc(it.name)} 측정값">
+        <span class="unit">${esc(it.unit)}</span>
+        <span class="spec">기준: ${esc(it.specText)} ${esc(it.unit)} <span class="pill warn">샘플</span></span>
+        <span class="verdict ${j === 'out' ? 'bad' : j === 'ok' ? 'ok' : ''}" data-verdict>${j === 'out' ? '기준 이탈' : j === 'ok' ? '기준 이내' : j === 'invalid' ? '숫자를 입력하세요' : ''}</span>
+      </div>` : '';
+    const issues = r.issues.map(is => `
+      <div class="issue ${is.closed ? 'closed' : ''}" data-issue="${is.id}">
+        <span class="pill sev-${is.sev}">${SEV_LABEL[is.sev]}</span>
+        <span class="txt">${esc(is.text)}</span>
+        <button class="btn sm" data-act="toggleIssue">${is.closed ? '다시 열기' : '해결'}</button>
+        <button class="btn sm danger" data-act="delIssue" aria-label="이슈 삭제">삭제</button>
+      </div>`).join('');
+    return `
+      <div class="item ${j === 'out' ? 'out' : ''}" data-item="${it.id}">
+        <div class="item-head">
+          <span class="item-title">${esc(it.name)}</span>
+          <span class="pill">${it.type === 'measure' ? '측정값' : '체크'}</span>
+        </div>
+        <div class="seg" role="group" aria-label="상태">${seg}</div>
+        ${meas}
+        <textarea rows="2" data-act="memo" placeholder="메모 (보류 사유, 특이사항 등)">${esc(r.memo)}</textarea>
+        <div class="issues">${issues}</div>
+        <div class="issue-form">
+          <input data-issue-text placeholder="이슈 내용 입력">
+          <select data-issue-sev aria-label="심각도"><option value="high">심각도: 높음</option><option value="mid" selected>심각도: 중간</option><option value="low">심각도: 낮음</option></select>
+          <button class="btn sm" data-act="addIssue">이슈 등록</button>
+        </div>
+      </div>`;
+  }
+
+  function renderStages() {
+    const c = cur(); const t = tpl(c);
+    const openIds = new Set([...document.querySelectorAll('details.stage[open]')].map(d => d.dataset.stage));
+    const first = !document.querySelector('details.stage');
+    $('#stages').innerHTML = t.stages.map((st, idx) => `
+      <details class="stage" data-stage="${st.id}" ${(first ? idx === 0 : openIds.has(st.id)) ? 'open' : ''}>
+        <summary><span class="sp">${esc(st.name)}</span><span class="pill" data-stage-badge="${st.id}"></span></summary>
+        ${st.items.map(it => itemHTML(c, it)).join('')}
+      </details>`).join('');
+    renderProgress();
+  }
+
+  function renderItem(itemId) {
+    const c = cur();
+    const it = tpl(c).stages.flatMap(s => s.items).find(i => i.id === itemId);
+    const el = document.querySelector(`[data-item="${itemId}"]`);
+    if (!it || !el) return;
+    const tmp = document.createElement('div'); tmp.innerHTML = itemHTML(c, it).trim();
+    el.replaceWith(tmp.firstElementChild);
+  }
+
+  function renderAll() { renderCaseSelect(); renderInfo(); renderStages(); }
+
+  // ---------- 기능 2: 인수인계 요약 생성 ----------
+  function buildSummary(c) {
+    const t = tpl(c); const p = compute(c);
+    const completed = [], pending = [], openIssues = [], outs = [];
+    t.stages.forEach(st => st.items.forEach(it => {
+      const r = rec(c, it.id); const j = judge(it, r.value);
+      const valTxt = it.type === 'measure' && r.value !== '' ? ` (측정 ${r.value} ${it.unit}, 기준 ${it.specText}${j === 'out' ? ', 기준 이탈' : ''})` : '';
+      if (r.status === 'done' || r.status === 'na') completed.push({ st, it, r, valTxt, j });
+      else pending.push({ st, it, r, valTxt, j });
+      if (j === 'out') outs.push({ st, it, r });
+      r.issues.filter(is => !is.closed).forEach(is => openIssues.push({ st, it, is }));
+    }));
+    openIssues.sort((a, b) => SEV_ORDER[a.is.sev] - SEV_ORDER[b.is.sev] || a.is.at - b.is.at);
+
+    // 다음 담당자가 먼저 할 일 3가지 (항목당 1개): 높은 이슈 → 기준 이탈 재확인 → 보류 항목 → 중간 이슈 → 남은 순서대로 → 낮은 이슈
+    const next = []; const used = new Set();
+    const push = (key, txt) => { if (next.length < 3 && !used.has(key)) { used.add(key); next.push(txt); } };
+    openIssues.filter(o => o.is.sev === 'high').forEach(o => {
+      const r = rec(c, o.it.id); const out = judge(o.it, r.value) === 'out';
+      push(o.it.id, `[이슈·높음] ${o.st.name} › ${o.it.name}: ${o.is.text}${out ? ` (측정 ${r.value} ${o.it.unit}, 기준 ${o.it.specText} 이탈 → 조치 후 재측정)` : ''}`);
+    });
+    outs.forEach(o => push(o.it.id, `[기준 이탈] ${o.st.name} › ${o.it.name}: ${o.r.value} ${o.it.unit} → 원인 확인 후 재측정 (기준 ${o.it.specText})`));
+    pending.filter(x => x.r.status === 'hold').forEach(x => push(x.it.id, `[보류 해소] ${x.st.name} › ${x.it.name}${x.r.memo ? ` (사유: ${x.r.memo})` : ''}`));
+    openIssues.filter(o => o.is.sev === 'mid').forEach(o => push(o.it.id, `[이슈·중간] ${o.st.name} › ${o.it.name}: ${o.is.text}`));
+    pending.filter(x => x.r.status === '').forEach(x => push(x.it.id, `[이어서 진행] ${x.st.name} › ${x.it.name}`));
+    openIssues.filter(o => o.is.sev === 'low').forEach(o => push(o.it.id, `[이슈·낮음] ${o.st.name} › ${o.it.name}: ${o.is.text}`));
+
+    return { c, p, completed, pending, openIssues, outs, next, createdAt: new Date() };
+  }
+
+  function summaryHTML(s) {
+    const i = s.c.info;
+    const li = arr => arr.length ? `<ul>${arr.join('')}</ul>` : `<p class="empty">없음</p>`;
+    const byStage = {};
+    s.completed.forEach(x => (byStage[x.st.name] ||= []).push(x));
+    const completedHTML = Object.keys(byStage).length
+      ? `<ul>${Object.entries(byStage).map(([name, xs]) => `<li><b>${esc(name)}</b>: ${xs.map(x =>
+          `${esc(x.it.name)}${x.r.status === 'na' ? ' (해당 없음)' : ''}<span class="${x.j === 'out' ? 'redtxt' : ''}">${esc(x.valTxt)}</span>`).join(', ')}</li>`).join('')}</ul>`
+      : `<p class="empty">없음</p>`;
+    return `
+      <h3>장비 셋업 인수인계 요약</h3>
+      <div class="meta">${esc(i.customer || '-')} · ${esc(i.site || '-')} · ${esc(i.model)} · S/N ${esc(i.sn || '-')}</div>
+      <div class="meta">인계: ${esc(i.owner || '-')} → 인수: ${esc(i.nextOwner || '-')} · 교대 시작 ${esc(fmtTime(i.shiftStart))}</div>
+      <div class="meta">전체 진행률 <b>${s.p.pct}%</b> (${s.p.done}/${s.p.total}) · 보류 ${s.p.hold} · 기준 이탈 <b class="${s.p.out ? 'redtxt' : ''}">${s.p.out}</b> · 열린 이슈 ${s.openIssues.length}</div>
+
+      <h4>✔ 완료된 단계·항목</h4>
+      ${completedHTML}
+
+      <h4>□ 미완료·보류 항목과 그 이유</h4>
+      ${li(s.pending.map(x => `<li><span class="pill ${x.r.status === 'hold' ? 'warn' : ''}">${STATUS_LABEL[x.r.status]}</span> ${esc(x.st.name)} › ${esc(x.it.name)}<span class="${x.j === 'out' ? 'redtxt' : ''}">${esc(x.valTxt)}</span>${x.r.memo ? ` - 사유: ${esc(x.r.memo)}` : x.r.status === 'hold' ? ' - 사유: <span class="redtxt">미기재</span>' : ''}</li>`))}
+
+      <h4>⚠ 열린 이슈 (심각도순)</h4>
+      ${li(s.openIssues.map(o => `<li><span class="pill sev-${o.is.sev}">${SEV_LABEL[o.is.sev]}</span> ${esc(o.st.name)} › ${esc(o.it.name)}: ${esc(o.is.text)}</li>`))}
+
+      <h4>→ 다음 담당자가 먼저 할 일 3가지</h4>
+      ${s.next.length ? `<ol>${s.next.map(n => `<li>${esc(n)}</li>`).join('')}</ol>` : `<p class="empty">모든 항목이 완료되었습니다.</p>`}
+
+      <h4>작성 정보</h4>
+      <div class="meta">작성자: ${esc(i.owner || '-')} · 작성 시각: ${esc(fmtTime(s.createdAt))}</div>
+      <div class="meta" style="margin-top:6px">※ 샘플 데이터 기반 시제품 출력물입니다.</div>`;
+  }
+
+  function summaryText(s) {
+    const i = s.c.info; const L = [];
+    L.push('[장비 셋업 인수인계 요약]');
+    L.push(`${i.customer || '-'} / ${i.site || '-'} / ${i.model} / S/N ${i.sn || '-'}`);
+    L.push(`인계: ${i.owner || '-'} → 인수: ${i.nextOwner || '-'} / 교대 시작 ${fmtTime(i.shiftStart)}`);
+    L.push(`전체 진행률 ${s.p.pct}% (${s.p.done}/${s.p.total}), 보류 ${s.p.hold}, 기준 이탈 ${s.p.out}, 열린 이슈 ${s.openIssues.length}`);
+    L.push('', '■ 완료');
+    if (s.completed.length) s.completed.forEach(x => L.push(`- ${x.st.name} > ${x.it.name}${x.r.status === 'na' ? ' (해당 없음)' : ''}${x.valTxt}`)); else L.push('- 없음');
+    L.push('', '■ 미완료·보류');
+    if (s.pending.length) s.pending.forEach(x => L.push(`- [${STATUS_LABEL[x.r.status]}] ${x.st.name} > ${x.it.name}${x.valTxt}${x.r.memo ? ' / 사유: ' + x.r.memo : ''}`)); else L.push('- 없음');
+    L.push('', '■ 열린 이슈 (심각도순)');
+    if (s.openIssues.length) s.openIssues.forEach(o => L.push(`- [${SEV_LABEL[o.is.sev]}] ${o.st.name} > ${o.it.name}: ${o.is.text}`)); else L.push('- 없음');
+    L.push('', '■ 다음 담당자가 먼저 할 일');
+    if (s.next.length) s.next.forEach((n, k) => L.push(`${k + 1}. ${n}`)); else L.push('- 모든 항목 완료');
+    L.push('', `작성자: ${i.owner || '-'} / 작성 시각: ${fmtTime(s.createdAt)}`);
+    L.push('※ 샘플 데이터 기반 시제품 출력물');
+    return L.join('\n');
+  }
+
+  let lastSummary = null;
+  function renderSummary() { lastSummary = buildSummary(cur()); $('#summarySheet').innerHTML = summaryHTML(lastSummary); }
+
+  // ---------- 화면 전환 ----------
+  function showView(v) {
+    $('#view-check').classList.toggle('hidden', v !== 'check');
+    $('#view-summary').classList.toggle('hidden', v !== 'summary');
+    $('#tab-check').setAttribute('aria-selected', v === 'check');
+    $('#tab-summary').setAttribute('aria-selected', v === 'summary');
+    if (v === 'summary') renderSummary();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  let toastTimer;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800); }
+
+  // ---------- 이벤트 ----------
+  document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+  $('#makeSummary').addEventListener('click', () => showView('summary'));
+  $('#refreshSummary').addEventListener('click', () => { renderSummary(); toast('요약을 다시 만들었습니다'); });
+  $('#printSummary').addEventListener('click', () => window.print());
+  $('#copySummary').addEventListener('click', async () => {
+    if (!lastSummary) renderSummary();
+    const text = summaryText(lastSummary);
+    try { await navigator.clipboard.writeText(text); toast('요약을 복사했습니다'); }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); toast('요약을 복사했습니다'); } catch (e2) { toast('복사에 실패했습니다'); }
+      ta.remove();
+    }
+  });
+
+  $('#caseSelect').addEventListener('change', e => { state.currentId = e.target.value; save(); renderInfo(); document.querySelectorAll('details.stage').forEach(d => d.remove()); renderStages(); });
+  $('#newCase').addEventListener('click', () => { const c = blankCase(); state.cases.push(c); state.currentId = c.id; save(); renderAll(); toast('새 셋업 건을 만들었습니다'); });
+  $('#delCase').addEventListener('click', () => {
+    if (!confirm('현재 셋업 건과 기록을 삭제할까요?')) return;
+    state.cases = state.cases.filter(c => c.id !== state.currentId);
+    if (!state.cases.length) state.cases.push(sampleCase());
+    state.currentId = state.cases[0].id; save(); renderAll();
+  });
+  $('#resetAll').addEventListener('click', () => {
+    if (!confirm('모든 기록을 지우고 샘플 데이터로 초기화할까요?')) return;
+    localStorage.removeItem(STORE_KEY); load(); renderAll(); showView('check');
+  });
+
+  document.querySelectorAll('[data-info]').forEach(el => {
+    const h = () => {
+      const c = cur(); c.info[el.dataset.info] = el.value; save(); renderInfoLine();
+      if (el.dataset.info === 'model') renderStages();
+      if (['customer', 'site', 'sn'].includes(el.dataset.info)) renderCaseSelect();
+    };
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', h);
+  });
+
+  const stagesEl = $('#stages');
+  stagesEl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    const itemEl = btn.closest('[data-item]'); if (!itemEl) return;
+    const c = cur(); const r = rec(c, itemEl.dataset.item); const act = btn.dataset.act;
+    if (act === 'status') { r.status = r.status === btn.dataset.v ? '' : btn.dataset.v; }
+    else if (act === 'addIssue') {
+      const txt = itemEl.querySelector('[data-issue-text]').value.trim();
+      if (!txt) { toast('이슈 내용을 입력하세요'); return; }
+      r.issues.push({ id: uid(), text: txt, sev: itemEl.querySelector('[data-issue-sev]').value, closed: false, at: Date.now() });
+      toast('이슈를 등록했습니다');
+    }
+    else if (act === 'toggleIssue') { const is = r.issues.find(x => x.id === btn.closest('[data-issue]').dataset.issue); if (is) is.closed = !is.closed; }
+    else if (act === 'delIssue') { r.issues = r.issues.filter(x => x.id !== btn.closest('[data-issue]').dataset.issue); }
+    else return;
+    save(); renderItem(itemEl.dataset.item); renderProgress();
+  });
+  stagesEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.matches('[data-issue-text]')) { e.preventDefault(); e.target.closest('[data-item]').querySelector('[data-act="addIssue"]').click(); }
+  });
+  stagesEl.addEventListener('input', e => {
+    const el = e.target; const itemEl = el.closest('[data-item]'); if (!itemEl) return;
+    const c = cur(); const r = rec(c, itemEl.dataset.item);
+    if (el.dataset.act === 'memo') { r.memo = el.value; save(); }
+    else if (el.dataset.act === 'value') {
+      r.value = el.value; save();
+      const it = tpl(c).stages.flatMap(s => s.items).find(i => i.id === itemEl.dataset.item);
+      const j = judge(it, r.value);
+      itemEl.classList.toggle('out', j === 'out');
+      const v = itemEl.querySelector('[data-verdict]');
+      v.className = 'verdict ' + (j === 'out' ? 'bad' : j === 'ok' ? 'ok' : '');
+      v.textContent = j === 'out' ? '기준 이탈' : j === 'ok' ? '기준 이내' : j === 'invalid' ? '숫자를 입력하세요' : '';
+      renderProgress();
+    }
+  });
+
+  load(); renderAll();
+})();
+</script>
+</body>
+</html>
